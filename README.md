@@ -3,7 +3,9 @@
 <div align="center">
     <img width="25%" alt="ParroT" src="https://github.com/wxjiao/ParroT/assets/31032829/9893aba1-7ea3-4c76-a995-9b12aff44950">
     <h2>
-    ParroT: Translating During Chat Using Large Language Models
+    ParroT: Translating During Chat Using Large Language Models <br><br>
+     <a href="https://arxiv.org/abs/2304.02426"> <img alt="paper link" src="https://img.shields.io/badge/Paper-arXiv-red"> </a>
+     <a href="https://github.com/wxjiao/InstructMT"> <img alt="data link" src="https://img.shields.io/badge/Data-InstructMT-blue"> </a> 
     </h2>
 </div>
 
@@ -13,10 +15,11 @@
 --->
 
 :fire: **Update**
-- [2023/06/14] Releasing detailed instruction data and scripts on [@InstructMT](https://github.com/wxjiao/InstructMT).
+- [2023/07/14] Incorporated [`flash-attention`](https://github.com/wxjiao/ParroT/blob/master/transformers/examples/pytorch/language-modeling/run_clm_llms_flash.py) into BLOOM for long-context training; observed about 20-30% speedup with other settings fixed.
 
-<details>
-    
+<details> 
+
+- [2023/06/14] Releasing detailed instruction data and scripts on [@InstructMT](https://github.com/wxjiao/InstructMT). 
 - The WMT22 test sets are made available.
 - For medium-to-small models (e.g., 7B), we recommend ZeRO2+offload rather than ZerO3; use gradient accumulation to maximize GPU usage.
 - Important optimizations: `preprocess_function` to be 4-5X faster; `DataCollatorForSeq2Seq` for batch-wise padding to save  5-10% GPU usage.
@@ -29,7 +32,10 @@
 - :hugs: Try the pretrained models at HuggingFace model hub:
   -  [[Alpaca-7b]](https://huggingface.co/wxjiao/alpaca-7b), [[ParroT-7b]](https://huggingface.co/wxjiao/ParroT-7b), [[ParroT-Hint-7b]](https://huggingface.co/wxjiao/ParroT-Hint-7b)
   -  [[ParroT-Hint-7b-lora]](https://huggingface.co/wxjiao/ParroT-Hint-7b-lora) based on [[LLaMA-7b]](https://huggingface.co/wxjiao/llama-7b)
+
+<!---
 - :page_facing_up: The preprint is available now on arxiv, refer to it for more details: [[paper]](https://arxiv.org/abs/2304.02426) 
+--->
 
 
 ## ParroT
@@ -81,6 +87,8 @@ Framework Versions:
 - Pytorch 1.13.1+cu117
 - Transformers (git+https://github.com/huggingface/transformers.git) 
 - Peft (git+https://github.com/huggingface/peft.git)
+- Flash-attn
+- Triton 2.0.0.dev20221202
 - Other requirements
 ```
 pip install -r requirements.txt
@@ -116,6 +124,7 @@ Theoretically, the `run_clm_lora.py` script can handle both full model and LoRA 
 
 **For LoRA training, we recommend to use ZeRO2 since ZeRO3 is very unstable when saving `adapter_model.bin`.**
 
+For long-context training, we provide the [`run_clm_llms_flash.py`](https://github.com/wxjiao/ParroT/blob/master/transformers/examples/pytorch/language-modeling/run_clm_llms_flash.py) to improve the memory efficiency.
 
 LLaMA-7b:
 - Original weights for the LLaMA models can be obtained by filling out this [Form](https://docs.google.com/forms/d/e/1FAIpQLSfqNECQnMkycAp2jP4Z9TFX0cGR4uf7b_fBxjY_OjhJILlKGA/viewform)
@@ -311,6 +320,15 @@ python3 inference_lora.py --model-name-or-path <your_proj_path>/llama-7b \
 </details>
 
 
+### MT Evaluation
+We adopt two metrics, SacreBLEU and COMET (Unbabel/wmt22-comet-da), which are driven by _n_-gram similarity and cross-lingual pretrained models, respectively. 
+```
+# SacreBLEU
+cat test_rand_50.zh-en.none-hint.txt.hyp | sacrebleu -w 2 test_rand_50.en.txt
+
+# COMET
+comet-score -r test_rand_50.en.txt -s test_rand_50.zh.txt -t test_rand_50.zh-en.none-hint.txt.hyp --quiet --only_system
+```
 
 
 ### Finetuned LLMs and Results
@@ -392,6 +410,7 @@ This project cannot be developed without the following resources:
 - BigScience `Bloomz`: https://huggingface.co/bigscience/bloom
 - HuggingFace developers on `LLaMA`: https://github.com/huggingface/transformers/pull/21955
 - Stanford `Alpaca`: https://github.com/tatsu-lab/stanford_alpaca
+- OptimalScale: https://github.com/OptimalScale/LMFlow
 - `llama.cpp` by [@ggerganov](https://github.com/ggerganov/llama.cpp) and [@comex](https://github.com/comex/llama.cpp)
 
 
